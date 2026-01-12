@@ -9,7 +9,6 @@
 
 特别说明：代码为个人复现与改进版本，旨在验证论文理论的有效性，可能存在参数差异和代码缺陷，如有问题欢迎指正。
 
----
 
 ## 2. 复现细节与改进创新
 
@@ -27,7 +26,7 @@
 **矩形巡航 (Square Patrol)**
 模拟直角转弯路径，测试系统对位置突变信号（非平滑路径）的瞬态响应能力。
 
----
+
 
 ## 3. 项目文件结构说明
 
@@ -46,10 +45,76 @@
 **TD1.m / TD2.m (跟踪微分器)**
 用于对输入信号进行平滑处理，并提取高质量的微分信号（速度/加速度），辅助控制器减少噪声干扰。
 
----
+
 
 ## 4. 参考与致谢
 
 本项目的核心算法来源于 **刘栩粼, 胡德清** 的论文 **《基于前馈补偿的PD四旋翼无人机轨迹跟踪控制》**，模型基础构建于常规四旋翼动力学建模理论。
 
+
+
+---
+
+# Quadrotor-Trajectory-Tracking-PD-Feedforward-Simulink
+
+# Quadrotor UAV Trajectory Tracking Control based on PD with Feedforward Compensation (Simulink Simulation)
+
+## 1. Project Background & Introduction
+
+This project is the coursework for the **IoT Control Technology** course. The core objective is to reproduce the control algorithm from the academic paper **"Trajectory Tracking Control for Quadrotor UAV Based on PD with Feedforward Compensation"** using the MATLAB/Simulink platform.
+
+Addressing the issues of nonlinearity, strong coupling, and interference faced by quadrotor UAVs during flight, this project constructs a complete **Six-Degrees-of-Freedom (6-DOF) Dynamic Model** and adopts a dual-loop control strategy. Specifically, the **Outer Loop (Position Loop)** employs a PD control algorithm based on feedforward compensation to calculate the desired attitude angles; the **Inner Loop (Attitude Loop)** employs a PD control algorithm to ensure rapid tracking of the desired attitude.
+
+**Note**: This code is a personal reproduction and improvement version intended to verify the validity of the paper's theory. There may be parameter differences or code defects. Feedback and corrections are welcome.
+
+---
+
+## 2. Reproduction Details & Improvements
+
+Building upon the reproduction of the core algorithm from the original paper, this project emphasizes improvements in the verification strategy. While the original paper typically uses a single trajectory for verification, this project expands `wzctrl.m` to include four different types of test trajectories to comprehensively evaluate the algorithm's robustness under various operating conditions:
+
+**Altitude Step**
+Tests the step response capability of the UAV in the vertical direction, focusing on observing the system's overshoot and steady-state error.
+
+**Spiral Ascent**
+
+This is the benchmark test trajectory from the original paper, used to verify the tracking accuracy during X, Y, and Z three-axis linkage.
+
+**Figure-8 Flight**
+
+Tests the coupling maneuverability of the UAV during continuous turning in the horizontal plane, challenging the feedforward compensation's ability to suppress dynamic errors.
+
+**Square Patrol (Rectangular Cruise)**
+Simulates a path with right-angle turns to test the system's transient response capability to position mutation signals (non-smooth paths).
+
+---
+
+## 3. Project File Structure Description
+
+**matlab2024b.slx (Simulation Model)**
+This is the main entry file of the project, containing the complete Simulink block diagram that integrates the UAV physical model, controller modules, and signal connections. **Please note: This file must be opened using MATLAB 2024b or a newer version.**
+
+**wzctrl.m (Position Controller / Outer Loop)**
+This is the core script with the most significant modifications in this project. It contains not only the calculation logic for the PD control law and feedforward terms but also integrates the generation algorithms for the four test trajectories mentioned above. It serves as the "brain" of the control system.
+
+**ztctrl.m (Attitude Controller / Inner Loop)**
+This script is responsible for receiving the desired angles (Roll, Pitch) and Yaw angle from the position loop and calculating the required lift torques for the motors to ensure rapid attitude response.
+
+**UAV.m (Controlled Object Model)**
+A Six-Degrees-of-Freedom nonlinear dynamic equation (S-Function) of the quadrotor UAV established based on Newton-Euler equations, used to simulate real physical characteristics in the simulation environment.
+
+**TD1.m / TD2.m (Tracking Differentiators)**
+Used to smooth input signals and extract high-quality differential signals (velocity/acceleration) to assist the controller in reducing noise interference.
+
+---
+
+## 4. References & Acknowledgements
+
+The core algorithm of this project is derived from the paper **"Trajectory Tracking Control for Quadrotor UAV Based on PD with Feedforward Compensation"** by **Liu Xulin and Hu Deqing**. The model foundation is built upon standard quadrotor dynamic modeling theory.
+
+If you have questions regarding the mathematical derivations or other contents in the code, it is recommended to refer to the **PDF Paper** and compare it with the detailed comments in the code for understanding.
+
 如果您对代码中的数学推导等内容有疑问，建议参考 **PDF 论文** 以及代码中的详细注释进行对照理解。
+
+
+---
