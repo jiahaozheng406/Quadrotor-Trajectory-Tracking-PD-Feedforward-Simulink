@@ -50,7 +50,7 @@
 ## 4. 参考与致谢
 
 本项目的核心算法来源于 **刘栩粼, 胡德清** 的论文 **《基于前馈补偿的PD四旋翼无人机轨迹跟踪控制》**，模型基础构建于常规四旋翼动力学建模理论。
-
+如果您对代码中的数学推导等内容有疑问，建议参考 **PDF 论文** 以及代码中的详细注释进行对照理解。
 
 
 ---
@@ -67,7 +67,6 @@ Addressing the issues of nonlinearity, strong coupling, and interference faced b
 
 **Note**: This code is a personal reproduction and improvement version intended to verify the validity of the paper's theory. There may be parameter differences or code defects. Feedback and corrections are welcome.
 
----
 
 ## 2. Reproduction Details & Improvements
 
@@ -87,7 +86,6 @@ Tests the coupling maneuverability of the UAV during continuous turning in the h
 **Square Patrol (Rectangular Cruise)**
 Simulates a path with right-angle turns to test the system's transient response capability to position mutation signals (non-smooth paths).
 
----
 
 ## 3. Project File Structure Description
 
@@ -106,7 +104,6 @@ A Six-Degrees-of-Freedom nonlinear dynamic equation (S-Function) of the quadroto
 **TD1.m / TD2.m (Tracking Differentiators)**
 Used to smooth input signals and extract high-quality differential signals (velocity/acceleration) to assist the controller in reducing noise interference.
 
----
 
 ## 4. References & Acknowledgements
 
@@ -114,7 +111,4 @@ The core algorithm of this project is derived from the paper **"Trajectory Track
 
 If you have questions regarding the mathematical derivations or other contents in the code, it is recommended to refer to the **PDF Paper** and compare it with the detailed comments in the code for understanding.
 
-如果您对代码中的数学推导等内容有疑问，建议参考 **PDF 论文** 以及代码中的详细注释进行对照理解。
 
-
----
