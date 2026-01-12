@@ -20,8 +20,8 @@ function [sys,x0,str,ts,simStateCompliance]=mdlInitializeSizes
 sizes = simsizes;
 sizes.NumContStates  = 0;
 sizes.NumDiscStates  = 0;
-sizes.NumOutputs     = 3;
-sizes.NumInputs      = 16;
+sizes.NumOutputs     = 3;   % è¾“å‡º: å‡åŠ›u1, æœŸæœ›ä¿¯ä»°theta_d, æœŸæœ›åèˆªpsi_d
+sizes.NumInputs      = 16;  % è¾“å…¥: åŒ…å«æ— äººæœºæ‰€æœ‰çŠ¶æ€é‡
 sizes.DirFeedthrough = 1;
 sizes.NumSampleTimes = 1; 
 sys = simsizes(sizes);
@@ -37,91 +37,159 @@ function sys=mdlUpdate(t,x,u)
 sys = [];
 
 function sys=mdlOutputs(t,x,u)
-%% [ºËĞÄĞŞ¸ÄÇøÓò] ¶¨ÒåÂİĞıÉÏÉı¹ì¼£
-% ²ÎÊıÉèÖÃ£º°ë¾¶R=2Ã×£¬½ÇËÙ¶Èomega=0.5rad/s£¬ÉÏÉıËÙ¶Èvz=0.5m/s
-R = 2;
-omega = 0.5;
-vz = 0.5;
 
-% XÖá£ºÓàÏÒÔË¶¯ (x = R*cos(wt))
-x1d   = R * cos(omega*t);
-dx1d  = -R * omega * sin(omega*t);
-ddx1d = -R * omega^2 * cos(omega*t);
 
-% YÖá£ºÕıÏÒÔË¶¯ (y = R*sin(wt))
-yd    = R * sin(omega*t);
-dyd   = R * omega * cos(omega*t);
-ddyd  = -R * omega^2 * sin(omega*t);
+%%                 è½¨è¿¹ç”Ÿæˆæ¨¡å— (å››é€‰ä¸€)
 
-% ZÖá£ºÔÈËÙÉÏÉı (z = vz*t)
-% Éè¶¨Ò»¸öÉÏÏŞ£¬±ÈÈç·Éµ½10Ã×¾ÍÍ£ÔÚ10Ã×
-if t < 20
-    zd   = vz * t;
-    dzd  = vz;
-    ddzd = 0;
-else
-    zd   = 20 * vz; % ±£³ÖÔÚ×îºóµÄ¸ß¶È
-    dzd  = 0;
-    ddzd = 0;
-end
+%% --- åœºæ™¯ 1: é«˜åº¦è·ƒå‡æµ‹è¯• (Altitude Step) --- 
+% ç›®çš„ï¼šæµ‹è¯•Zè½´çš„é˜¶è·ƒå“åº”é€Ÿåº¦å’Œè¶…è°ƒé‡
+%{
+    % æ°´å¹³ä½ç½®ä¿æŒåœ¨åŸç‚¹
+    x1d = 0; dx1d = 0; ddx1d = 0;
+    yd  = 0; dyd  = 0; ddyd  = 0;
 
-%% »ñÈ¡µ±Ç°×´Ì¬
-x1 = u(10);  dx1 = u(11);
-y = u(12);   dy = u(13);
-z = u(14);   dz = u(15);
+    % Zè½´ï¼šå‰5ç§’åœ¨0ç±³ï¼Œ5ç§’æ—¶ç¬é—´è®¾å®šä¸º5ç±³
+    if t < 5
+        zd = 0; dzd = 0; ddzd = 0;
+    else
+        zd = 5; dzd = 0; ddzd = 0; 
+    end
+%}
+
+%% --- åœºæ™¯ 2: èºæ—‹ä¸Šå‡ (Spiral Ascent) --- 
+% ç›®çš„ï¼šè®ºæ–‡åŸºå‡†æµ‹è¯•ï¼ŒéªŒè¯ä¸‰è½´è”åŠ¨çš„è·Ÿè¸ªç²¾åº¦
+%
+    R = 2;          % åŠå¾„
+    omega = 0.5;    % è§’é€Ÿåº¦
+    vz = 0.5;       % ä¸Šå‡é€Ÿåº¦
+
+    % Xè½´ï¼šä½™å¼¦è¿åŠ¨
+    x1d   = R * cos(omega*t);
+    dx1d  = -R * omega * sin(omega*t);
+    ddx1d = -R * omega^2 * cos(omega*t);
+
+    % Yè½´ï¼šæ­£å¼¦è¿åŠ¨
+    yd    = R * sin(omega*t);
+    dyd   = R * omega * cos(omega*t);
+    ddyd  = -R * omega^2 * sin(omega*t);
+
+    % Zè½´ï¼šåŒ€é€Ÿä¸Šå‡ï¼Œæœ€é«˜åˆ°10ç±³
+    if t < 20
+        zd   = vz * t;
+        dzd  = vz;
+        ddzd = 0;
+    else
+        zd   = 10; dzd = 0; ddzd = 0;
+    end
+%
+
+%% --- åœºæ™¯ 3: 8å­—å½¢é£è¡Œ (Figure-8) --- 
+% ç›®çš„ï¼šæµ‹è¯•æ— äººæœºåœ¨æ°´å¹³é¢åšå¤æ‚æ›²çº¿æ—¶çš„æœºåŠ¨æ€§
+%{
+    A = 5;      % å¹…åº¦
+    w = 0.4;    % é¢‘ç‡
+
+    % Xè½´ï¼šå·¦å³æ‘†åŠ¨ A*sin(wt)
+    x1d   = A * sin(w*t);
+    dx1d  = A * w * cos(w*t);
+    ddx1d = -A * w^2 * sin(w*t);
+
+    % Yè½´ï¼šå€é¢‘æ‘†åŠ¨å½¢æˆ8å­— A/2*sin(2wt)
+    yd    = (A/2) * sin(2*w*t);
+    dyd   = A * w * cos(2*w*t);
+    ddyd  = -2 * A * w^2 * sin(2*w*t);
+
+    % Zè½´ï¼šå®šé«˜æ‚¬åœ
+    zd = 5; dzd = 0; ddzd = 0;
+%}
+
+%% --- åœºæ™¯ 4: çŸ©å½¢å·¡èˆª (Square Patrol) ---
+% ç›®çš„ï¼šæµ‹è¯•å¯¹ç›´è§’è½¬å¼¯ï¼ˆçªå˜ä¿¡å·ï¼‰çš„å“åº”èƒ½åŠ›
+%{
+    period = 20;    % è·‘ä¸€åœˆçš„æ—¶é—´
+    lt = mod(t, period); 
+    v = 1.0;        % å·¡èˆªé€Ÿåº¦
+
+    zd = 5; dzd = 0; ddzd = 0; % é«˜åº¦å›ºå®š
+
+    % åˆ†å››æ®µèµ°çŸ©å½¢ï¼š(0,0)->(0,5)->(5,5)->(5,0)->(0,0)
+    if lt < 5
+        x1d = 0; dx1d=0; ddx1d=0;
+        yd = v*lt; dyd=v; ddyd=0;
+    elseif lt < 10
+        x1d = v*(lt-5); dx1d=v; ddx1d=0;
+        yd = 5; dyd=0; ddyd=0;
+    elseif lt < 15
+        x1d = 5; dx1d=0; ddx1d=0;
+        yd = 5 - v*(lt-10); dyd=-v; ddyd=0;
+    else
+        x1d = 5 - v*(lt-15); dx1d=-v; ddx1d=0;
+        yd = 0; dyd=0; ddyd=0;
+    end
+%}
+
+%% =============================================================
+%%                   æ§åˆ¶å™¨æ ¸å¿ƒç®—æ³• (PD + å‰é¦ˆ)
+%% =============================================================
+
+% 1. è·å–å½“å‰çŠ¶æ€ (ä»è¾“å…¥uè¯»å–)
+x1  = u(10); dx1 = u(11);
+y   = u(12); dy  = u(13);
+z   = u(14); dz  = u(15);
 phi = u(16);
 
-%% ¶¨ÒåÎó²î
-xe = x1 - x1d;  dxe = dx1 - dx1d; % ×¢Òâ£ºÕâÀïÎÒ²¹È«ÁËXÖáÎó²î¶¨Òå
-ye = y - yd;    dye = dy - dyd;   % ×¢Òâ£ºÕâÀïÎÒ²¹È«ÁËYÖáÎó²î¶¨Òå
-ze = z - zd;    dze = dz - dzd;
+% 2. è®¡ç®—è¯¯å·® (Error)
+xe  = x1 - x1d;  dxe = dx1 - dx1d;
+ye  = y  - yd;   dye = dy  - dyd;
+ze  = z  - zd;   dze = dz  - dzd;
 
-%% ÎŞÈË»úÎïÀí²ÎÊı
+% 3. ç‰©ç†å‚æ•°
 m = 1.8;  g = 9.8;  K3 = 0.01;
 
-%% ¿ØÖÆÆ÷²ÎÊı
+% 4. æ§åˆ¶å™¨å‚æ•° (æ ¹æ®éœ€è¦å¾®è°ƒ)
 kdx = 5; kpx = 5;
 kdy = 5; kpy = 5;
 kdz = 5; kpz = 5;
 
-%% Î»ÖÃ»·¿ØÖÆÂÉ (PD + Ç°À¡)
-% XÖá¿ØÖÆ (°üº¬¼ÓËÙ¶ÈÇ°À¡ ddx1d)
-u1x = -kpx*xe - kdx*dxe + ddx1d; 
+% 5. ä½ç½®æ§åˆ¶å¾‹è®¡ç®—
+% Xè½´ (å«åŠ é€Ÿåº¦å‰é¦ˆ)
+u1x = -kpx*xe - kdx*dxe + ddx1d;
 
-% YÖá¿ØÖÆ (°üº¬¼ÓËÙ¶ÈÇ°À¡ ddyd)
-u1y = -kpy*ye - kdy*dye + ddyd; 
+% Yè½´ (å«åŠ é€Ÿåº¦å‰é¦ˆ)
+u1y = -kpy*ye - kdy*dye + ddyd;
 
-% ZÖá¿ØÖÆ (°üº¬ÖØÁ¦g + ¼ÓËÙ¶ÈÇ°À¡ddzd + ×èÁ¦²¹³¥)
+% Zè½´ (å«é‡åŠ›è¡¥å¿ + åŠ é€Ÿåº¦å‰é¦ˆ + é˜»åŠ›è¡¥å¿)
 u1z = -kpz*ze - kdz*dze + g + ddzd + K3/m*dzd;
 
-%% ×ËÌ¬½âËãÆ÷ (·ÀÆæÒì±£»¤°æ)
+% 6. å§¿æ€è§£ç®— (è™šæ‹Ÿæ§åˆ¶é‡ -> å®é™…è§’åº¦)
+% é˜²æ­¢åˆ†æ¯ä¸º0
 if abs(u1z) < 0.001, u1z = 0.001; end
 
-% ¼ÆËãÖĞ¼ä±äÁ¿X
-X_val = (cos(phi)*cos(phi)*u1x + cos(phi)*sin(phi)*u1y)/u1z;
+% è®¡ç®—ä¸­é—´å˜é‡
+X_temp = (cos(phi)*cos(phi)*u1x + cos(phi)*sin(phi)*u1y)/u1z;
 
-% ÆÚÍû¸©Ñö½Ç (ÏŞÖÆ·ù¶È)
-if X_val > 1
+% æœŸæœ›ä¿¯ä»°è§’ (theta_d) - å¢åŠ é™å¹…é˜²æ­¢ç¿»è½¦
+if X_temp > 1
     thetad = pi/2;
-elseif X_val < -1
+elseif X_temp < -1
     thetad = -pi/2;
 else
-    thetad = asin(X_val);
+    thetad = asin(X_temp);
 end
 
-% ÆÚÍûÆ«º½½Ç (Ğ­µ÷×ªÍä²ßÂÔ)
+% æœŸæœ›åèˆªè§’ (psi_d)
 psid = atan((sin(phi)*cos(phi)*u1x - cos(phi)*cos(phi)*u1y)/u1z);
 
-% ×ÜÉıÁ¦
+% è®¡ç®—æ€»å‡åŠ› U1
 u1 = u1z/(cos(phi)*cos(psid));
 
-%% Ä£¿éÊä³ö
+%% 7. æ¨¡å—è¾“å‡º
 sys(1) = u1;
 sys(2) = thetad;
 sys(3) = psid;
 
 function sys=mdlGetTimeOfNextVarHit(t,x,u)
-sampleTime = 1;   
+sampleTime = 1;    
 sys = t + sampleTime;
 
 function sys=mdlTerminate(t,x,u)
